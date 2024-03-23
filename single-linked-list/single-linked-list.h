@@ -68,10 +68,7 @@ class SingleLinkedList {
         // Оператор сравнения итераторов (в роли второго аргумента выступает константный итератор)
         // Два итератора равны, если они ссылаются на один и тот же элемент списка либо на end()
         [[nodiscard]] bool operator==(const BasicIterator<const Type>& rhs) const noexcept {
-            if(node_ == rhs.node_){
-                return true;
-            }
-            return false;
+            return node_ == rhs.node_;
         }
 
         // Оператор проверки итераторов на неравенство
@@ -83,10 +80,7 @@ class SingleLinkedList {
         // Оператор сравнения итераторов (в роли второго аргумента итератор)
         // Два итератора равны, если они ссылаются на один и тот же элемент списка либо на end()
         [[nodiscard]] bool operator==(const BasicIterator<Type>& rhs) const noexcept {
-            if(node_ == rhs.node_){
-                return true;
-            }
-            return false;
+            return node_ == rhs.node_;
         }
 
         // Оператор проверки итераторов на неравенство
@@ -99,9 +93,8 @@ class SingleLinkedList {
         // Возвращает ссылку на самого себя
         // Инкремент итератора, не указывающего на существующий элемент списка, приводит к неопределённому поведению
         BasicIterator& operator++() noexcept {
-            if(node_){
-                node_ = node_->next_node;
-            }
+            assert(node_);
+            node_ = node_->next_node;
             return *this;
         }
 
@@ -110,12 +103,9 @@ class SingleLinkedList {
         // Инкремент итератора, не указывающего на существующий элемент списка,
         // приводит к неопределённому поведению
         BasicIterator operator++(int) noexcept {
-            if(this->node_){
-                auto old_value(*this);
-                ++(*this);
-                return old_value;
-            }
-            return *this;
+            auto old_value(*this);
+            ++(*this);
+            return old_value;
         }
 
         // Операция разыменования. Возвращает ссылку на текущий элемент
@@ -196,20 +186,6 @@ public:
         return ConstIterator{&head_};
     }
 
-    template<typename Iterator>
-    void CopyList(Iterator begin, Iterator end){
-        SingleLinkedList tmp1, tmp2;
-
-        for(auto iter = begin; iter != end; iter++){
-            tmp1.PushFront(*iter);
-        }
-        for(auto iter = tmp1.begin(); iter != tmp1.end(); iter++){
-            tmp2.PushFront(*iter);
-        }
-
-        swap(tmp2);
-    }
-
     SingleLinkedList() = default;
 
     SingleLinkedList(std::initializer_list<Type> list){
@@ -240,7 +216,7 @@ public:
 
     // Сообщает, пустой ли список
     [[nodiscard]] bool IsEmpty() const noexcept {
-        return !size_;
+        return size_ == 0;
     }
 
     void swap(SingleLinkedList& rhs){
@@ -265,8 +241,10 @@ public:
     }
 
     void PopFront(){
+        assert(size_ != 0);
         auto tmp = head_.next_node;
         head_.next_node = head_.next_node->next_node;
+        --size_;
         delete tmp;
     }
 
@@ -288,6 +266,21 @@ public:
 private: 
     Node head_ = Node();
     size_t size_ = 0;
+
+    template<typename Iterator>
+    void CopyList(Iterator begin, Iterator end){
+        SingleLinkedList tmp1;
+        SingleLinkedList tmp2;
+
+        for(auto iter = begin; iter != end; iter++){
+            tmp1.PushFront(*iter);
+        }
+        for(auto iter = tmp1.begin(); iter != tmp1.end(); iter++){
+            tmp2.PushFront(*iter);
+        }
+
+        swap(tmp2);
+    }
 };
 
 template<typename Type>
@@ -307,17 +300,17 @@ bool operator<(const SingleLinkedList<Type>& lhs, const SingleLinkedList<Type>& 
 
 template<typename Type>
 bool operator>(const SingleLinkedList<Type>& lhs, const SingleLinkedList<Type>& rhs){
-    return std::lexicographical_compare(rhs.begin(), rhs.end(), lhs.begin(), lhs.end());
+    return rhs < lhs;
 }
 
 template<typename Type> 
 bool operator<=(const SingleLinkedList<Type>& lhs, const SingleLinkedList<Type>& rhs){
-    return lhs < rhs || lhs == rhs;
+    return !(rhs < lhs);
 }
 
 template<typename Type> 
 bool operator>=(const SingleLinkedList<Type>& lhs, const SingleLinkedList<Type>& rhs){
-    return lhs > rhs || lhs == rhs;
+    return !(lhs < rhs);
 }
 
 template<typename Type>
